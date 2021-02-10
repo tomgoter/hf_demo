@@ -87,6 +87,8 @@ def main():
   training_dataset = create_dataset(train_sentences, train_labels, args.SEQUENCE_LENGTH, TOKENIZER)
   val_dataset = create_dataset(val_sentences, val_labels, args.SEQUENCE_LENGTH, TOKENIZER)
   
+  print(f'Maximum Sequence Length: {args.SEQUENCE_LENGTH}')
+  
   mirrored_strategy = tf.distribute.MirroredStrategy()
   print (f'Number of devices: {mirrored_strategy.num_replicas_in_sync}')
   
