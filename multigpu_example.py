@@ -33,7 +33,7 @@ def gather_data(data):
   return sentences, labels
   
   
-def create_dataset(sequences, labels, batch_size = GLOBAL_BATCH_SIZE):
+def create_dataset(sequences, labels):
   input_ids = []
   attention_mask = []
   token_ids = []
