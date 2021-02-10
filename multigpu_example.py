@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 from transformers import TFBertForSequenceClassification, BertTokenizer
 from transformers import TFRobertaForSequenceClassification, RobertaTokenizer
+from transformers import TFElectraForSequenceClassification, ElectraTokenizer
+from transformers import TFDistilBertForSequenceClassification
 from transformers import TFTrainer, TFTrainingArguments
 import os
 from pprint import pprint
@@ -61,7 +63,8 @@ def main():
   parser.add_argument('-m', '--model', choices=['bert-base-uncased',
                                                 'bert-large-uncased', 
                                                 'roberta-base', 
-                                                'roberta-large'],
+                                                'roberta-large',
+                                                'distilbert-base-uncased',],
                         help='Class of Model Architecture to use for classification')
   parser.add_argument('-b', '--BATCH_SIZE', default=64, type=int,
                        help='batch size to use per replica')
@@ -69,13 +72,13 @@ def main():
                        help='maximum sequence length. short sequences are padded. long are truncated')
   
   args = parser.parse_args()
-  
-  if args.model[:4] == 'bert':
-    # Use Bert tokenizer
-    TOKENIZER = BertTokenizer.from_pretrained(args.model)
-  else:
+    
+  if args.model[:4] == 'robe':
     # Use Roberta tokenizer
     TOKENIZER = RobertaTokenizer.from_pretrained(args.model)
+  else:
+    # Use Bert tokenizer
+    TOKENIZER = BertTokenizer.from_pretrained(args.model)
   
   
   train_sentences, train_labels = gather_data(TRAINING_DATA)
@@ -105,8 +108,10 @@ def main():
   with mirrored_strategy.scope():
     if args.model[:4] == 'bert':
       model = TFBertForSequenceClassification.from_pretrained(args.model, num_labels=4)
-    else:
+    elif args.model[:4] == 'robe':
       model = TFRobertaForSequenceClassification.from_pretrained(args.model, num_labels=4)
+    else:
+      model = TFDistilBertForSequenceClassification.from_pretrained(args.model, num_labels=4)
       
     optimizer = tf.keras.optimizers.Adam(learning_rate=1e-5)
     loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
