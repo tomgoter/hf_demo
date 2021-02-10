@@ -17,6 +17,8 @@ VAL_DATA = './ag_news_csv/test.csv'
 
 GLOBAL_BATCH_SIZE = 256
 
+METRICS = [tf.keras.metrics.Accuracy(name='accuracy')]
+
 # Use base Bert tokenizer
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
