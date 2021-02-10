@@ -88,10 +88,11 @@ def main():
     METRICS = [tf.keras.metrics.SparseCategoricalAccuracy(name='accuracy')]
     model.compile(optimizer=optimizer, loss=loss, metrics=METRICS)
     
-  model.fit(dist_train_dataset,
-            epochs=2,
-            steps_per_epoch=len(training_dataset) // GLOBAL_BATCH_SIZE,
-            validation_data = dist_val_dataset)
+  model.fit(batched_training_dataset,
+            epochs=5,
+            #steps_per_epoch=len(training_dataset) // GLOBAL_BATCH_SIZE,
+            validation_data = batched_val_dataset, 
+            )
   
   
 if __name__ == '__main__':
