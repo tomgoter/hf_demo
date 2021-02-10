@@ -67,3 +67,7 @@ def main():
   
   training_dataset = create_dataset(train_sentences, train_labels)
   test_dataset = create_dataset(test_sentences, test_labels)
+  
+  
+if __name__ == '__main__':
+  main()
