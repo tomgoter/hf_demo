@@ -1,12 +1,14 @@
 import numpy as np
 import pandas as pd
-from transformers import TFBertModel, TFBertForSequenceClassification, BertTokenizer
+from transformers import TFBertForSequenceClassification, BertTokenizer
+from transformers import TFRobertaForSequenceClassification, RobertaTokenizer
 from transformers import TFTrainer, TFTrainingArguments
 import os
 from pprint import pprint
 import tensorflow as tf
 from tqdm import tqdm
 from tensorflow.keras import layers, initializers
+import argparse
 
 print(f'Numpy version: {np.__version__}')
 print(f'Pandas version: {pd.__version__}')
@@ -14,9 +16,6 @@ print(f'TensorFlow version: {tf.__version__}')
 
 TRAINING_DATA = './ag_news_csv/train.csv'
 VAL_DATA = './ag_news_csv/test.csv' 
-
-# Use base Bert tokenizer
-tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
 def gather_data(data):
   df = pd.read_csv(data, header=None)
@@ -33,7 +32,7 @@ def gather_data(data):
   return sentences, labels
   
   
-def create_dataset(sequences, labels):
+def create_dataset(sequences, labels, tokenizer = TOKENIZER):
   input_ids = []
   attention_mask = []
   token_ids = []
@@ -60,6 +59,27 @@ def create_dataset(sequences, labels):
   
   
 def main():
+  
+  parser = argparse.ArgumentParser(description='Script for running text topic classification with transformers package')
+  parser.add_argument('-m', '--model', choices=['bert-base-uncased',
+                                                'bert-large-uncased', 
+                                                'roberta-base', 
+                                                'roberta-large'],
+                        help='Class of Model Architecture to use for classification')
+  parser.add_argument('-o', '--output', type=str,
+                        help='Output File Prefix for model file and dataframe')
+  parser.add_argument('-b', '--BATCH_SIZE', default=64, type=int,
+                       help='batch size to use per replica')
+  
+  args = parser.parse_args()
+  
+  if args.model[:4] == 'bert':
+    # Use base Bert tokenizer
+    TOKENIZER = BertTokenizer.from_pretrained(args.model)
+  else:
+    TOKENIZER = RobertaTokenizer.from_pretrained(args.model)
+  
+  
   train_sentences, train_labels = gather_data(TRAINING_DATA)
   val_sentences, val_labels = gather_data(VAL_DATA)
   
@@ -78,11 +98,15 @@ def main():
   batched_training_dataset = training_dataset.shuffle(1024).batch(GLOBAL_BATCH_SIZE, drop_remainder=True)
   batched_val_dataset = val_dataset.shuffle(1024).batch(GLOBAL_BATCH_SIZE, drop_remainder=True)
 
-  dist_train_dataset = mirrored_strategy.experimental_distribute_dataset(batched_training_dataset)
-  dist_val_dataset = mirrored_strategy.experimental_distribute_dataset(batched_val_dataset)
+  #dist_train_dataset = mirrored_strategy.experimental_distribute_dataset(batched_training_dataset)
+  #dist_val_dataset = mirrored_strategy.experimental_distribute_dataset(batched_val_dataset)
  
   with mirrored_strategy.scope():
-    model = TFBertForSequenceClassification.from_pretrained('bert-base-uncased', num_labels=4)
+    if args.model[:4] == 'bert':
+      model = TFBertForSequenceClassification.from_pretrained(args.model, num_labels=4)
+    else:
+      model = TFRobertaForSequenceClassification.from_pretrained(args.model, num_labels=4)
+      
     optimizer = tf.keras.optimizers.Adam(learning_rate=1e-5)
     loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
     METRICS = [tf.keras.metrics.SparseCategoricalAccuracy(name='accuracy')]
@@ -90,9 +114,8 @@ def main():
     
   model.fit(batched_training_dataset,
             epochs=5,
-            #steps_per_epoch=len(training_dataset) // GLOBAL_BATCH_SIZE,
-            validation_data = batched_val_dataset, 
-            )
+            validation_data = batched_val_dataset,
+           )
   
   
 if __name__ == '__main__':
