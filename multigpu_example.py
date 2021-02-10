@@ -32,7 +32,7 @@ def gather_data(data):
   return sentences, labels
   
   
-def create_dataset(sequences, labels, tokenizer = TOKENIZER):
+def create_dataset(sequences, labels, seq_length, tokenizer = TOKENIZER):
   input_ids = []
   attention_mask = []
   token_ids = []
@@ -70,13 +70,16 @@ def main():
                         help='Output File Prefix for model file and dataframe')
   parser.add_argument('-b', '--BATCH_SIZE', default=64, type=int,
                        help='batch size to use per replica')
+  parser.add_argument('-l', '--SEQUENCE_LENGTH', default=128, type=int,
+                       help='maximum sequence length. short sequences are padded. long are truncated')
   
   args = parser.parse_args()
   
   if args.model[:4] == 'bert':
-    # Use base Bert tokenizer
+    # Use Bert tokenizer
     TOKENIZER = BertTokenizer.from_pretrained(args.model)
   else:
+    # Use Roberta tokenizer
     TOKENIZER = RobertaTokenizer.from_pretrained(args.model)
   
   
@@ -86,14 +89,15 @@ def main():
   print(f'Length of Training Set: {len(train_sentences)}')
   print(f'Length of Test Set: {len(val_sentences)}')
   
-  training_dataset = create_dataset(train_sentences, train_labels)
+  training_dataset = create_dataset(train_sentences, train_labels, args.SEQUENCE_LENGTH)
   val_dataset = create_dataset(val_sentences, val_labels)
   
   mirrored_strategy = tf.distribute.MirroredStrategy()
-  print ('Number of devices: {}'.format(mirrored_strategy.num_replicas_in_sync))
+  print (f'Number of devices: {mirrored_strategy.num_replicas_in_sync}')
   
-  BATCH_SIZE_PER_REPLICA = 64
+  BATCH_SIZE_PER_REPLICA = args.BATCH_SIZE
   GLOBAL_BATCH_SIZE = BATCH_SIZE_PER_REPLICA * mirrored_strategy.num_replicas_in_sync
+  print(f'Global Batch Size: {GLOBAL_BATCH_SIZE}')
 
   batched_training_dataset = training_dataset.shuffle(1024).batch(GLOBAL_BATCH_SIZE, drop_remainder=True)
   batched_val_dataset = val_dataset.shuffle(1024).batch(GLOBAL_BATCH_SIZE, drop_remainder=True)
@@ -113,7 +117,7 @@ def main():
     model.compile(optimizer=optimizer, loss=loss, metrics=METRICS)
     
   model.fit(batched_training_dataset,
-            epochs=5,
+            epochs=3,
             validation_data = batched_val_dataset,
            )
   
