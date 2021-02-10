@@ -41,17 +41,14 @@ def create_dataset(sequences, labels, seq_length, tokenizer):
       encoded_dict = tokenizer.encode_plus(sent,
                    add_special_tokens = True,
                    padding = 'max_length',
-                   max_length = 128,
+                   max_length = seq_length,
                    truncation = True,
                    return_attention_mask = True,
-                   return_token_type_ids = True,
                    return_tensors = 'tf') 
       input_ids.append(tf.reshape(encoded_dict['input_ids'],[-1]))
-      #token_ids.append(tf.reshape(encoded_dict['token_type_ids'],[-1]))
       attention_mask.append(tf.reshape(encoded_dict['attention_mask'],[-1]))
 
   dataset = tf.data.Dataset.from_tensor_slices(({'input_ids': input_ids,
-                                            #'token_type_ids':token_ids,
                                             'attention_mask':attention_mask}, labels))
 
 
