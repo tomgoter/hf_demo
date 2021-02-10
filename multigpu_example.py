@@ -66,8 +66,6 @@ def main():
                                                 'roberta-base', 
                                                 'roberta-large'],
                         help='Class of Model Architecture to use for classification')
-  parser.add_argument('-o', '--output', type=str,
-                        help='Output File Prefix for model file and dataframe')
   parser.add_argument('-b', '--BATCH_SIZE', default=64, type=int,
                        help='batch size to use per replica')
   parser.add_argument('-l', '--SEQUENCE_LENGTH', default=128, type=int,
