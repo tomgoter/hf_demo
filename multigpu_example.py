@@ -32,7 +32,7 @@ def gather_data(data):
   return sentences, labels
   
   
-def create_dataset(sequences, labels, seq_length, tokenizer = TOKENIZER):
+def create_dataset(sequences, labels, seq_length, tokenizer):
   input_ids = []
   attention_mask = []
   token_ids = []
@@ -87,8 +87,8 @@ def main():
   print(f'Length of Training Set: {len(train_sentences)}')
   print(f'Length of Test Set: {len(val_sentences)}')
   
-  training_dataset = create_dataset(train_sentences, train_labels, args.SEQUENCE_LENGTH)
-  val_dataset = create_dataset(val_sentences, val_labels)
+  training_dataset = create_dataset(train_sentences, train_labels, args.SEQUENCE_LENGTH, TOKENIZER)
+  val_dataset = create_dataset(val_sentences, val_labels, args.SEQUENCE_LENGTH, TOKENIZER)
   
   mirrored_strategy = tf.distribute.MirroredStrategy()
   print (f'Number of devices: {mirrored_strategy.num_replicas_in_sync}')
