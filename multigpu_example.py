@@ -15,6 +15,8 @@ print(f'TensorFlow version: {tf.__version__}')
 TRAINING_DATA = './ag_news_csv/train.csv'
 VAL_DATA = './ag_news_csv/test.csv' 
 
+GLOBAL_BATCH_SIZE = 256
+
 # Use base Bert tokenizer
 tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
@@ -33,7 +35,7 @@ def gather_data(data):
     return sentences, labels
   
   
-def create_dataset(sequences, labels, batch_size = 256):
+def create_dataset(sequences, labels, batch_size = GLOBAL_BATCH_SIZE):
     input_ids = []
     attention_mask = []
     token_ids = []
@@ -65,8 +67,27 @@ def main():
   train_sentences, train_labels = gather_data(TRAINING_DATA)
   val_sentences, val_labels = gather_data(VAL_DATA)
   
+  print(f'Length of Training Set: {len(train_sentences)}')
+  print(f'Length of Test Set: {len(test_sentences)}')
+  
   training_dataset = create_dataset(train_sentences, train_labels)
-  test_dataset = create_dataset(test_sentences, test_labels)
+  val_dataset = create_dataset(val_sentences, val_labels)
+  
+  batched_training_dataset = training_dataset.shuffle(1024).batch(256)
+  batched_val_dataset = val_dataset.shuffle(1024).batch(256)
+
+  mirrored_strategy = tf.distribute.MirroredStrategy()
+  
+  with mirrored_strategy.scope():
+    model = TFBertForSequenceClassification.from_pretrained('bert-base-uncased', num_labels=4)
+    optimizer = tf.keras.optimizers.Adam(learning_rate=1e-5)
+    loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+    model.compile(optimizer=optimizer, loss=loss, metrics=METRICS)
+    
+  model.fit(batched_training_dataset,
+            epochs=2,
+            steps_per_epoch=len(training_dataset)//GLOBAL_BATCH_SIZE,
+            validation_data = batched_val_dataset)
   
   
 if __name__ == '__main__':
