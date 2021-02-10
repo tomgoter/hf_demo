@@ -68,7 +68,7 @@ def main():
   val_sentences, val_labels = gather_data(VAL_DATA)
   
   print(f'Length of Training Set: {len(train_sentences)}')
-  print(f'Length of Test Set: {len(test_sentences)}')
+  print(f'Length of Test Set: {len(val_sentences)}')
   
   training_dataset = create_dataset(train_sentences, train_labels)
   val_dataset = create_dataset(val_sentences, val_labels)
@@ -86,7 +86,7 @@ def main():
     
   model.fit(batched_training_dataset,
             epochs=2,
-            steps_per_epoch=len(training_dataset)//GLOBAL_BATCH_SIZE,
+            steps_per_epoch=len(training_dataset) // GLOBAL_BATCH_SIZE,
             validation_data = batched_val_dataset)
   
   
