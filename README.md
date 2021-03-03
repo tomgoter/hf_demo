@@ -10,10 +10,10 @@ Process for Training in Cloud:
 2. Clone this repository `git clone https://github.com/tomgoter/hf_demo.git`
 3. Create docker image - in this case we will call it `nlp' `docker build -t nlp -f hf_demo/build.docker .`
 4. Start docker container `docker run -it --rm -v ~/hf_demo:/hf_demo nlp bash`
-5. Execute the training script ```python multigpu_example.py \\
-6.                                              --model MODEL \\
-7.                                              --BATCH_SIZE BATCH_SIZE \\
-8.                                              --SEQUENCE_LENGTH SEQUENCE_LENGTH```
-
+5. Execute the training script ```python multigpu_example.py --model MODEL --BATCH_SIZE BATCH_SIZE --SEQUENCE_LENGTH SEQUENCE_LENGTH```
+- MODEL can be one of ['bert-base-uncased', 'bert-large-uncased', 'roberta-base', 'roberta-large', 'distilbert-base-uncased', 'google/electra-base-discriminator']
+- BATCH_SIZE defaults to 64 (per GPU) but can be set to anything within memory limits (typically 64 is about the max)
+- SEQUENCE_LENGTH defaults to 128 and is the maximum, fixed sequence length to be processed by the model (padding and truncation enforced)
+ 
 
 
