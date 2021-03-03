@@ -4,6 +4,8 @@
 
 This repo contains an example script that is setup to run text classification using various transformer-based models from HuggingFace transformers library. The data set used is the AGNews dataset which consists of 120K training examples and 7600 validation examples. Also contained in this repository is a dockerfile that can be used to setup a controlled environment. This process has been tested locally and on the IBM Cloud.
 
+**Note: The Jupyter Notebook is simply used as a scratchpad and may not be work on a given commit. The tested path for training is included in the python script.**
+
 Process for Training in Cloud:
 
 1. Requisition Required Resources (in this case a 2xV100 GPU node)
