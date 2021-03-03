@@ -153,7 +153,7 @@ def main():
   df['times'] = time_callback.times
     
   df.to_pickle(f'{args.model}_BS{args.BATCH_SIZE}_SEQ{args.SEQUENCE_LENGTH}.pkl')
-  model.save(f'{args.model}_BS{args.BATCH_SIZE}_SEQ{args.SEQUENCE_LENGTH}.h5')
+  model.save_pretrained(f'./{args.model}_BS{args.BATCH_SIZE}_SEQ{args.SEQUENCE_LENGTH}/')
   
 if __name__ == '__main__':
   main()
