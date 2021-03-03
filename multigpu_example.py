@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import time
 from transformers import TFBertForSequenceClassification, BertTokenizer
 from transformers import TFRobertaForSequenceClassification, RobertaTokenizer
 from transformers import TFElectraForSequenceClassification
@@ -138,7 +139,7 @@ def main():
   early_stop = tf.keras.callbacks.EarlyStopping(
         verbose=1,
         patience=2,
-        min_delta = 0.01,
+        min_delta = 0.005,
         restore_best_weights=True)
 
   time_callback = TimeHistory()
