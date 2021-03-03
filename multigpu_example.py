@@ -19,6 +19,17 @@ print(f'TensorFlow version: {tf.__version__}')
 TRAINING_DATA = './ag_news_csv/train.csv'
 VAL_DATA = './ag_news_csv/test.csv' 
 
+class TimeHistory(tf.keras.callbacks.Callback):
+  
+    def on_train_begin(self, logs={}):
+        self.times = []
+
+    def on_epoch_begin(self, batch, logs={}):
+        self.epoch_time_start = time.time()
+
+    def on_epoch_end(self, batch, logs={}):
+        self.times.append(time.time() - self.epoch_time_start)
+
 def gather_data(data):
   df = pd.read_csv(data, header=None)
   df.columns = ['label', 'title', 'desc']
@@ -71,6 +82,8 @@ def main():
                        help='batch size to use per replica')
   parser.add_argument('-l', '--SEQUENCE_LENGTH', default=128, type=int,
                        help='maximum sequence length. short sequences are padded. long are truncated')
+  parser.add_argument('-e', '--EPOCHS', default=5, type=int,
+                       help='the number of passes over the dataset to run. early stopping with 2 epoch patience is used')
   
   args = parser.parse_args()
     
@@ -120,11 +133,26 @@ def main():
     loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
     METRICS = [tf.keras.metrics.SparseCategoricalAccuracy(name='accuracy')]
     model.compile(optimizer=optimizer, loss=loss, metrics=METRICS)
-    
-  model.fit(batched_training_dataset,
-            epochs=3,
+  
+  # Use an early stopping callback and our timing callback
+  early_stop = tf.keras.callbacks.EarlyStopping(
+        verbose=1,
+        patience=2,
+        min_delta = 0.01,
+        restore_best_weights=True)
+
+  time_callback = TimeHistory()
+  
+  history = model.fit(batched_training_dataset,
+            epochs=args.EPOCHS,
             validation_data = batched_val_dataset,
-           )
+            callbacks=[early_stop, time_callback])
+  
+  df = pd.DataFrame(history.history)
+  df['times'] = time_callback.times
+    
+  df.to_pickle(f'{args.model}_BS{args.BATCH_SIZE}_SEQ{args.SEQUENCE_LENGTH}.pkl')
+  model.save(f'{args.model}_BS{args.BATCH_SIZE}_SEQ{args.SEQUENCE_LENGTH}.h5')
   
 if __name__ == '__main__':
   main()
